@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -26,11 +27,15 @@ func main() {
 	var (
 		csvFileName = flag.String("csv", "../../problems.csv", "the location of the CSV file")
 		timeLimit   = flag.Int("timer", 30, "the time limit for the user to answer all problems")
-		// shuffle   = flag.Bool("shuffle", false, "whether to shuffle the order of problems or not")
+		shuffle     = flag.Bool("shuffle", false, "whether to shuffle the order of problems or not")
 	)
 	flag.Parse()
 
 	problems := readProblems(*csvFileName)
+
+	if *shuffle {
+		shuffleProblems(&problems)
+	}
 
 	quiz := Quiz{
 		Problems: problems,
@@ -68,6 +73,14 @@ func grade(score int, possible int) string {
 		return "PERFECT"
 	} else {
 		return "Not bad"
+	}
+}
+
+func shuffleProblems(problems *[]Problem) {
+	rand.Seed(time.Now().Unix())
+	for i := len(*problems) - 1; i > 0; i-- {
+		j := rand.Intn(i + 1)
+		(*problems)[i], (*problems)[j] = (*problems)[j], (*problems)[i]
 	}
 }
 
