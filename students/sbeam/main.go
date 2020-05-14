@@ -66,11 +66,13 @@ func final(score int, possible int) {
 }
 
 func grade(score int, possible int) string {
+	if score == possible {
+		return "PERFECT"
+	}
+
 	ratio := float64(score) / float64(possible)
 	if ratio < 0.9 {
 		return "PATHETIC"
-	} else if int(ratio) == 1 {
-		return "PERFECT"
 	} else {
 		return "Not bad"
 	}
