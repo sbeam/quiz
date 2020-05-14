@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 )
 
 type Problem struct {
@@ -16,36 +17,74 @@ type Problem struct {
 	Answer   string
 }
 
+type Quiz struct {
+	Problems []Problem
+	Score    int
+}
+
 func main() {
 	var (
 		csvFileName = flag.String("csv", "../../problems.csv", "the location of the CSV file")
-		// timeLimit   = flag.Int("timer", 30, "the time limit for the user to answer all problems")
+		timeLimit   = flag.Int("timer", 30, "the time limit for the user to answer all problems")
 		// shuffle   = flag.Bool("shuffle", false, "whether to shuffle the order of problems or not")
 	)
 	flag.Parse()
 
 	problems := readProblems(*csvFileName)
 
-	score := quiz(problems)
+	quiz := Quiz{
+		Problems: problems,
+		Score:    0,
+	}
 
-	fmt.Printf("You got %d out of %d correct\n", score, len(problems))
+	fmt.Printf("Answer %d problems in %d seconds! Press ENTER to Begin", len(problems), *timeLimit)
+	bufio.NewReader(os.Stdin).ReadBytes('\n')
+
+	go func() {
+		<-time.After(time.Duration(*timeLimit) * time.Second)
+		fmt.Println("*** TIME IS UP! ***")
+		final(quiz.Score, len(quiz.Problems))
+		os.Exit(0)
+	}()
+
+	run(&quiz)
+
+	final(quiz.Score, len(quiz.Problems))
 }
 
-func quiz(problems []Problem) int {
-	scanner := bufio.NewScanner(os.Stdin)
-	score := 0
+func final(score int, possible int) {
+	fmt.Printf("You got %d out of %d correct. %s.\n",
+		score,
+		possible,
+		grade(score, possible),
+	)
+}
 
-	for _, problem := range problems {
+func grade(score int, possible int) string {
+	ratio := float64(score) / float64(possible)
+	if ratio < 0.9 {
+		return "PATHETIC"
+	} else if int(ratio) == 1 {
+		return "PERFECT"
+	} else {
+		return "Not bad"
+	}
+}
+
+func run(quiz *Quiz) {
+	scanner := bufio.NewScanner(os.Stdin)
+
+	for _, problem := range quiz.Problems {
 		fmt.Printf("%s : ", problem.Question)
 		scanner.Scan()
 		response := strings.TrimSpace(scanner.Text())
 		if response == problem.Answer {
 			fmt.Println("good job")
-			score++
+			quiz.Score++
+		} else {
+			fmt.Println("BZZZZT")
 		}
 	}
-
-	return score
 }
 
 func readProblems(path string) []Problem {
